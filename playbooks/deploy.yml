@@ -1,0 +1,5 @@
+---
+- name: Deploy the monitoring-stack Docker stack
+  hosts: cloud
+  roles:
+    - deploy

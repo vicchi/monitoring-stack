@@ -1,0 +1,55 @@
+- name: Install package dependencies
+  ansible.builtin.apt:
+    force_apt_get: true
+    pkg:
+      - python3-pip
+    state: present
+    update_cache: true
+    autoremove: true
+  register: dependencies
+  become: true
+  changed_when: dependencies.changed
+  failed_when: dependencies.failed
+
+- name: Setup docker compose
+  ansible.builtin.pip:
+    name: docker-compose
+
+- name: Create deployment directory
+  ansible.builtin.file:
+    path: "{{ deploy_root }}/{{ deploy_dir }}/{{ datastore_dir }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    mode: "700"
+  become: true
+
+- name: Deploy templated .env
+  ansible.builtin.template:
+    src: .env.j2
+    dest: "{{ deploy_root }}/{{ deploy_dir }}/.env"
+
+- name: Deploy templated docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ deploy_root }}/{{ deploy_dir }}/docker-compose.yml"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    mode: "700"
+  become: true
+
+- name: Check/create Traefik backend Docker network
+  community.docker.docker_network:
+    driver: bridge
+    name: "{{ traefik_network }}"
+    scope: local
+    state: present
+  become: true
+
+- name: Bring the Docker stack up as {{ compose_project }}
+  community.general.docker_compose:
+    project_name: "{{ compose_project }}"
+    project_src: "{{ deploy_root }}/{{ deploy_dir }}"
+    state: present
+    pull: true
+    recreate: smart

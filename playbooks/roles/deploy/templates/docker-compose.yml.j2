@@ -1,0 +1,24 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    expose:
+        - 3001
+    networks:
+      - {{ traefik_network }}
+    restart: unless-stopped
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+    volumes:
+      - ./data-stores/uptime-kuma:/app/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.uptime.rule=Host(`{{ uptime_host }}`)
+      - traefik.http.routers.uptime.entrypoints=websecure
+      - traefik.http.routers.uptime.tls.certresolver=reverse-proxy-http
+      - traefik.http.routers.uptime.tls.options=proxy-default@file
+      - traefik.http.routers.uptime.middlewares=secHeaders@file
+
+networks:
+    {{ traefik_network }}:
+      external: true
