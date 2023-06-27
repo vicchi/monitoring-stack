@@ -1,0 +1,40 @@
+services:
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    expose:
+      - 3000
+    networks:
+      - {{ traefik_network }}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://{{ umami_db_user }}:{{ umami_db_password }}@postgres:5432/{{ umami_db_name }}"
+      DATABASE_TYPE: postgresql
+      APP_SECRET: "{{ umami_app_secret }}"
+    depends_on:
+      - postgres
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.umami.rule=Host(`{{ analytics_host }}`)
+      - traefik.http.routers.umami.entrypoints=websecure
+      - traefik.http.routers.umami.tls.certresolver=reverse-proxy-http
+      - traefik.http.routers.umami.tls.options=proxy-default@file
+      - traefik.http.routers.umami.middlewares=secHeaders@file
+
+  postgres:
+    image: postgres:15-alpine
+    expose:
+      - 5432
+    networks:
+      - {{ traefik_network }}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "{{ umami_db_name }}"
+      POSTGRES_USER: "{{ umami_db_user }}"
+      POSTGRES_PASSWORD: "{{ umami_db_password }}"
+    volumes:
+      - ./sql/schema.postgresql.sql:/docker-entrypoint-initdb.d/schema.postgresql.sql:ro
+      - ./data-stores/umami:/var/lib/postgresql/data
+
+networks:
+    {{ traefik_network }}:
+      external: true

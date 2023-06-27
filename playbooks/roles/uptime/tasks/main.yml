@@ -15,19 +15,23 @@
   ansible.builtin.pip:
     name: docker-compose
 
-- name: Create deployment directory
+- name: Create deployment data store directory
   ansible.builtin.file:
     path: "{{ deploy_root }}/{{ deploy_dir }}/{{ datastore_dir }}"
     state: directory
     owner: "{{ deploy_user }}"
     group: "{{ deploy_group }}"
-    mode: "700"
+    mode: "707"
   become: true
 
 - name: Deploy templated .env
   ansible.builtin.template:
     src: .env.j2
     dest: "{{ deploy_root }}/{{ deploy_dir }}/.env"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    mode: "700"
+  become: true
 
 - name: Deploy templated docker-compose.yml
   ansible.builtin.template:
@@ -50,6 +54,7 @@
   community.general.docker_compose:
     project_name: "{{ compose_project }}"
     project_src: "{{ deploy_root }}/{{ deploy_dir }}"
+    env_file: "{{ deploy_root }}/{{ deploy_dir }}/.env"
     state: present
     pull: true
     recreate: smart

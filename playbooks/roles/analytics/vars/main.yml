@@ -1,0 +1,6 @@
+secrets_file: .secrets
+values:
+  - umami_app_secret
+  - umami_db_name
+  - umami_db_user
+  - umami_db_password

@@ -1,5 +1,10 @@
 ---
-- name: Deploy the monitoring-stack Docker stack
-  hosts: cloud
+- name: Deploy the analytics Docker stack
+  hosts: analytics
   roles:
-    - deploy
+    - analytics
+
+- name: Deploy the uptime Docker stack
+  hosts: uptime
+  roles:
+    - uptime
